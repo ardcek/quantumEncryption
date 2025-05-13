@@ -46,6 +46,22 @@ vector<string> splitFile(const string& filename, int parts) {
     return partNames;
 }
 
+// 3. Dosya Birleştirme Fonksiyonu (EKSİK OLAN)
+void mergeFiles(const vector<string>& partNames, const string& outputFile) {
+    ofstream out(outputFile, ios::binary);
+    if (!out) throw runtime_error("Cikti dosyasi olusturulamadi");
+
+    for (const auto& part : partNames) {
+        ifstream in(part, ios::binary);
+        if (!in) {
+            cerr << "Uyari: " << part << " acilamadi, atlaniyor" << endl;
+            continue;
+        }
+        out << in.rdbuf();
+    }
+}
+
+
 int main() {
 
 }
