@@ -103,6 +103,28 @@ void showMenu() {
 }
 
 
+// 6. Ana Program
 int main() {
+    OpenSSL_add_all_digests();
+    int choice;
+    string inputFile, outputFile, key;
+    vector<string> partList;
 
-}
+    do {
+        showMenu();
+        cin >> choice;
+        cin.ignore();
+
+        try {
+            switch (choice) {
+            case 1: { // XOR ŞİFRELEME İŞLEMİ
+                string inputFile, outputFile, key;
+
+                cout << "Sifrelenecek dosya (iptal icin bos birakin): ";
+                getline(cin, inputFile);
+
+                if (inputFile.empty()) {
+                    cout << "\nIslem iptal edildi. Ana menuye donuluyor...\n";
+                    _getch();
+                    break;
+                }
