@@ -23,6 +23,29 @@ void xorEncryptDecrypt(const string& inputFile, const string& outputFile, const 
     }
 }
 
+// 2. Dosya Parçalama Fonksiyonu
+vector<string> splitFile(const string& filename, int parts) {
+    ifstream file(filename, ios::binary | ios::ate);
+    if (!file.is_open()) throw runtime_error("Dosya acilamadi: " + filename);
+
+    size_t fileSize = file.tellg();
+    file.seekg(0, ios::beg);
+    size_t partSize = fileSize / parts;
+
+    vector<string> partNames;
+    vector<char> buffer(partSize);
+
+    for (int i = 0; i < parts; i++) {
+        if (i == parts - 1) partSize = fileSize - file.tellg();
+        file.read(buffer.data(), partSize);
+
+        string partName = filename + ".part" + to_string(i);
+        ofstream(partName, ios::binary).write(buffer.data(), partSize);
+        partNames.push_back(partName);
+    }
+    return partNames;
+}
+
 int main() {
 
 }
