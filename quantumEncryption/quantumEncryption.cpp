@@ -11,8 +11,18 @@
 
 using namespace std;
 
-int main()
-{
-    std::cout << "Hello World!\n";
+// 1. XOR Tabanlı Şifreleme Fonksiyonu
+void xorEncryptDecrypt(const string& inputFile, const string& outputFile, const string& key) {
+    ifstream in(inputFile, ios::binary);
+    ofstream out(outputFile, ios::binary);
+    char ch;
+    size_t keyIndex = 0;
+
+    while (in.get(ch)) {
+        out.put(ch ^ key[keyIndex++ % key.size()]);
+    }
 }
 
+int main() {
+
+}
