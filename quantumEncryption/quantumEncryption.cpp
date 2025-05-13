@@ -46,7 +46,7 @@ vector<string> splitFile(const string& filename, int parts) {
     return partNames;
 }
 
-// 3. Dosya Birleştirme Fonksiyonu (EKSİK OLAN)
+// 3. Dosya Birleştirme Fonksiyonu
 void mergeFiles(const vector<string>& partNames, const string& outputFile) {
     ofstream out(outputFile, ios::binary);
     if (!out) throw runtime_error("Cikti dosyasi olusturulamadi");
@@ -59,6 +59,31 @@ void mergeFiles(const vector<string>& partNames, const string& outputFile) {
         }
         out << in.rdbuf();
     }
+}
+
+// 4. MD5 Hash Hesaplama
+string calculateMD5(const string& filename) {
+    EVP_MD_CTX* context = EVP_MD_CTX_new();
+    const EVP_MD* md = EVP_md5();
+    unsigned char digest[EVP_MAX_MD_SIZE];
+    unsigned int digestLength;
+    char buffer[1024];
+
+    ifstream file(filename, ios::binary);
+    if (!file.is_open()) return "Dosya acilamadi";
+
+    EVP_DigestInit_ex(context, md, NULL);
+    while (file.read(buffer, sizeof(buffer))) {
+        EVP_DigestUpdate(context, buffer, file.gcount());
+    }
+    EVP_DigestFinal_ex(context, digest, &digestLength);
+    EVP_MD_CTX_free(context);
+
+    stringstream ss;
+    for (unsigned int i = 0; i < digestLength; i++) {
+        ss << hex << setw(2) << setfill('0') << (int)digest[i];
+    }
+    return ss.str();
 }
 
 
