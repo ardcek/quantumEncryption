@@ -86,6 +86,22 @@ string calculateMD5(const string& filename) {
     return ss.str();
 }
 
+// 5. Menü Gösterimi
+void showMenu() {
+    system("cls");
+
+    std::cout << "======================================\n";
+    std::cout << "| KUANTUM SIFRELEME DOSYA YONETICI   |\n";
+    std::cout << "|------------------------------------|\n";
+    std::cout << "| 1. Dosya Sifrele (XOR)             |\n";
+    std::cout << "| 2. Dosya Parcala                   |\n";
+    std::cout << "| 3. Dosya Birlestir                 |\n";
+    std::cout << "| 4. Dosya Hash Hesapla (MD5)        |\n";
+    std::cout << "| 5. Cikis                           |\n";
+    std::cout << "======================================\n";
+    std::cout << "Seciminiz: ";
+}
+
 
 int main() {
 
