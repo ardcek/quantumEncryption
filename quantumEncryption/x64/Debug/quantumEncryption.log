@@ -1,2 +1,2 @@
 ﻿  quantumEncryption.cpp
-C:\Users\Arda\source\repos\quantumEncryption\quantumEncryption\quantumEncryption.cpp(120,21): error C1075: '{': eşleşen hiçbir belirteç bulunamadı
+C:\Users\Arda\source\repos\quantumEncryption\quantumEncryption\quantumEncryption.cpp(119,29): error C1075: '{': eşleşen hiçbir belirteç bulunamadı

@@ -128,3 +128,36 @@ int main() {
                     _getch();
                     break;
                 }
+
+                cout << "Sifrelenmis dosya adi: ";
+                getline(cin, outputFile);
+
+                if (outputFile.empty()) {
+                    cout << "\nHATA: Cikti dosya adi bos olamaz!\n";
+                    _getch();
+                    break;
+                }
+
+                cout << "Sifre anahtari: ";
+                getline(cin, key);
+
+                if (key.empty()) {
+                    cout << "\nHATA: Sifre anahtari bos olamaz!\n";
+                    _getch();
+                    break;
+                }
+
+                try {
+                    xorEncryptDecrypt(inputFile, outputFile, key);
+                    cout << "\nBASARILI: Dosya sifrelendi!\n";
+                    cout << "Girdi: " << inputFile << "\n";
+                    cout << "Cikti: " << outputFile << "\n";
+                }
+                catch (const exception& e) {
+                    cout << "\nHATA: " << e.what() << "\n";
+                }
+
+                cout << "\nDevam etmek icin bir tusa basin...";
+                _getch();
+                break;
+            }
