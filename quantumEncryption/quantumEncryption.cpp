@@ -285,3 +285,38 @@ int main() {
                 _getch();
                 break;
             }
+
+            case 4: { // HASH HESAPLAMA İŞLEMİ
+                string inputFile;
+
+                cout << "Hash hesaplanacak dosya (iptal icin bos birakin): ";
+                getline(cin, inputFile);
+
+                if (inputFile.empty()) {
+                    cout << "\nIslem iptal edildi. Ana menuye donuluyor...\n";
+                    _getch();
+                    break;
+                }
+
+                ifstream file(inputFile, ios::binary);
+                if (!file) {
+                    cout << "\nHATA: \"" << inputFile << "\" dosyasi acilamadi!\n";
+                    _getch();
+                    break;
+                }
+                file.close();
+
+                try {
+                    string hash = calculateMD5(inputFile);
+                    cout << "\nBASARILI: Hash hesaplandi!\n";
+                    cout << "Dosya: " << inputFile << endl;
+                    cout << "MD5:   " << hash << endl;
+                }
+                catch (const exception& e) {
+                    cout << "\nHATA: " << e.what() << endl;
+                }
+
+                cout << "\nDevam etmek icin bir tusa basin...";
+                _getch();
+                break;
+            }
