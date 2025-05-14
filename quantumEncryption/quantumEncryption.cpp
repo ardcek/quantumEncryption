@@ -222,3 +222,47 @@ int main() {
                 }
 
                 if (partCount == 0) break;
+
+                // 2. PARÇALARI TEK TEK ALMA
+                for (int i = 0; i < partCount; i++) {
+                    while (true) {
+                        cout << i + 1 << ". parca dosya yolu: ";
+                        string partPath;
+                        getline(cin, partPath);
+
+                        if (partPath.empty()) {
+                            cout << "HATA: Dosya yolu bos olamaz!\n";
+                            continue;
+                        }
+
+                        ifstream file(partPath, ios::binary);
+                        if (!file) {
+                            cout << "HATA: \"" << partPath << "\" dosyasi acilamadi!\n";
+                            continue;
+                        }
+                        file.close();
+
+                        partsToMerge.push_back(partPath);
+                        break;
+                    }
+                }
+
+                // 3. ÇIKTI DOSYASI BELİRLEME
+                while (true) {
+                    cout << "Birlestirilmis dosya adi (iptal icin bos birakin): ";
+                    getline(cin, outputFile);
+
+                    if (outputFile.empty()) {
+                        cout << "\nIslem iptal edildi. Ana menuye donuluyor...\n";
+                        _getch();
+                        break;
+                    }
+
+                    // Dosya uzantısı kontrolü 
+                    if (outputFile.find('.') == string::npos) {
+                        cout << "UYARI: Dosya uzantisi belirtilmedi (.txt, .dat vb.)\n";
+                    }
+                    break;
+                }
+
+                if (outputFile.empty()) break;
