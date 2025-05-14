@@ -89,17 +89,30 @@ string calculateMD5(const string& filename) {
 // 5. Menü Gösterimi
 void showMenu() {
     system("cls");
-
-    std::cout << "======================================\n";
-    std::cout << "| KUANTUM SIFRELEME DOSYA YONETICI   |\n";
-    std::cout << "|------------------------------------|\n";
-    std::cout << "| 1. Dosya Sifrele (XOR)             |\n";
-    std::cout << "| 2. Dosya Parcala                   |\n";
-    std::cout << "| 3. Dosya Birlestir                 |\n";
-    std::cout << "| 4. Dosya Hash Hesapla (MD5)        |\n";
-    std::cout << "| 5. Cikis                           |\n";
-    std::cout << "======================================\n";
-    std::cout << "Seciminiz: ";
+    std::cout << "\n";
+    std::cout << "\t                         _                                                      _   _             \n";
+    std::cout << "\t  __ _ _   _  __ _ _ __ | |_ _   _ _ __ ___     ___ _ __   ___ _ __ _   _ _ __ | |_(_) ___  _ __  \n";
+    std::cout << "\t / _` | | | |/ _` | '_ \\| __| | | | '_ ` _ \\   / _ \\ '_ \\ / __| '__| | | | '_ \\| __| |/ _ \\| '_ \\ \n";
+    std::cout << "\t| (_| | |_| | (_| | | | | |_| |_| | | | | | | |  __/ | | | (__| |  | |_| | |_) | |_| | (_) | | | |\n";
+    std::cout << "\t \\__, |\\__,_|\\__,_|_| |_|\\__|\\__,_|_| |_| |_|  \\___|_| |_|\\___|_|   \\__, | .__/ \\__|_|\\___/|_| |_|\n";
+    std::cout << "\t    |_|                                                             |___/|_|                      \n";
+    std::cout << "\n";
+    std::cout << "\t\t\t\t\t   __            ___          __    \n";
+    std::cout << "\t\t\t\t\t  / /  __ __    / _ | _______/ /__ _\n";
+    std::cout << "\t\t\t\t\t / _ \\/ // /   / __ |/ __/ _  / _ `/\n";
+    std::cout << "\t\t\t\t\t/_.__/\\_, /   /_/ |_/_/  \\_,_/\\_,_/ \n";
+    std::cout << "\t\t\t\t\t     /___/                          \n";
+    std::cout << "\n";
+    std::cout << "\t\t\t\t\t======================================\n";
+    std::cout << "\t\t\t\t\t| KUANTUM SIFRELEME DOSYA YONETICI   |\n";
+    std::cout << "\t\t\t\t\t|------------------------------------|\n";
+    std::cout << "\t\t\t\t\t| 1. Dosya Sifrele (XOR)             |\n";
+    std::cout << "\t\t\t\t\t| 2. Dosya Parcala                   |\n";
+    std::cout << "\t\t\t\t\t| 3. Dosya Birlestir                 |\n";
+    std::cout << "\t\t\t\t\t| 4. Dosya Hash Hesapla (MD5)        |\n";
+    std::cout << "\t\t\t\t\t| 5. Cikis                           |\n";
+    std::cout << "\t\t\t\t\t======================================\n";
+    std::cout << "\n\nSeciminiz: ";
 }
 
 
