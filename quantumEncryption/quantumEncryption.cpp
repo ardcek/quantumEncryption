@@ -161,3 +161,27 @@ int main() {
                 _getch();
                 break;
             }
+
+            case 2: { // DOSYA PARÇALAMA İŞLEMİ
+                string inputFile;
+                int parts;
+
+                // 1. DOSYA GİRİŞİ
+                cout << "Parcalanacak dosya (iptal icin bos birakin): ";
+                getline(cin, inputFile);
+
+                if (inputFile.empty()) {
+                    cout << "\nIslem iptal edildi. Ana menuye donuluyor...\n";
+                    _getch();
+                    break;
+                }
+
+                // 2. DOSYA KONTROLÜ
+                ifstream file(inputFile, ios::binary);
+                if (!file) {
+                    cout << "\nHATA: \"" << inputFile << "\" dosyasi acilamadi!\n";
+                    cout << "Ana menuye donmek icin bir tusa basin...";
+                    _getch();
+                    break;
+                }
+                file.close();
