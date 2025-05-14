@@ -185,3 +185,40 @@ int main() {
                     break;
                 }
                 file.close();
+
+            case 3: { // DOSYA BİRLEŞTİRME İŞLEMİ
+                vector<string> partsToMerge;
+                string outputFile;
+
+                // 1. PARÇA SAYISI SORMA
+                int partCount = 0;
+                while (true) {
+                    cout << "Birlestirilecek parca sayisi (iptal icin 0 girin): ";
+                    string partCountStr;
+                    getline(cin, partCountStr);
+
+                    if (partCountStr.empty()) {
+                        cout << "\nIslem iptal edildi. Ana menuye donuluyor...\n";
+                        _getch();
+                        break;
+                    }
+
+                    try {
+                        partCount = stoi(partCountStr);
+                        if (partCount == 0) {
+                            cout << "\nIslem iptal edildi. Ana menuye donuluyor...\n";
+                            _getch();
+                            break;
+                        }
+                        else if (partCount < 1) {
+                            cout << "HATA: En az 1 parca girmelisiniz!\n";
+                            continue;
+                        }
+                        break;
+                    }
+                    catch (...) {
+                        cout << "HATA: Gecerli bir sayi girin!\n";
+                    }
+                }
+
+                if (partCount == 0) break;
