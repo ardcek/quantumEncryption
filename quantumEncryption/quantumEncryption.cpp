@@ -186,6 +186,44 @@ int main() {
                 }
                 file.close();
 
+                // 3. PARÇA SAYISI GİRİŞİ
+                while (true) {
+                    cout << "Parca sayisi (en az 2): ";
+                    string partsStr;
+                    getline(cin, partsStr);
+
+                    if (partsStr.empty()) {
+                        cout << "\nİşlem iptal edildi.\n";
+                        break;
+                    }
+
+                    try {
+                        parts = stoi(partsStr);
+                        if (parts >= 2) break;
+                        cout << "HATA: En az 2 parça girmelisiniz!\n";
+                    }
+                    catch (...) {
+                        cout << "HATA: Geçerli bir sayı girin!\n";
+                    }
+                }
+
+                // 4. PARÇALAMA İŞLEMİ
+                try {
+                    vector<string> createdParts = splitFile(inputFile, parts);
+                    cout << "\nBASARILI: Dosya " << parts << " parçaya bolundu:\n";
+                    for (const auto& part : createdParts) {
+                        cout << "->" << part << "\n";
+                    }
+                }
+                catch (const exception& e) {
+                    cout << "\nHATA: " << e.what() << "\n";
+                }
+
+                cout << "\nAna menuye donmek icin bir tusa basin...";
+                _getch();
+                break;
+            }
+
             case 3: { // DOSYA BİRLEŞTİRME İŞLEMİ
                 vector<string> partsToMerge;
                 string outputFile;
@@ -258,7 +296,7 @@ int main() {
                         break;
                     }
 
-                    // Dosya uzantısı kontrolü 
+                    // Dosya uzantısı kontrolü
                     if (outputFile.find('.') == string::npos) {
                         cout << "UYARI: Dosya uzantisi belirtilmedi (.txt, .dat vb.)\n";
                     }
@@ -273,7 +311,7 @@ int main() {
                     cout << "\nBASARILI: " << partCount << " parca birlestirildi!\n";
                     cout << "-> Cikti dosya: " << outputFile << endl;
 
-                    // Hash hesaplama (opsiyonel)
+                    // Hash hesaplama
                     string hash = calculateMD5(outputFile);
                     cout << "-> MD5 Hash: " << hash << endl;
                 }
@@ -320,3 +358,24 @@ int main() {
                 _getch();
                 break;
             }
+
+            case 5: { // ÇIKIŞ
+                break;
+            }
+
+            default: {
+                cout << "Gecersiz secim!\n";
+                _getch();
+            }
+            }
+        }
+        catch (const exception& e) {
+            cerr << "HATA: " << e.what() << endl;
+            _getch();
+        }
+
+    } while (choice != 5);
+
+    EVP_cleanup();
+    return 0;
+}
