@@ -266,3 +266,22 @@ int main() {
                 }
 
                 if (outputFile.empty()) break;
+
+                // 4. BİRLEŞTİRME İŞLEMİ
+                try {
+                    mergeFiles(partsToMerge, outputFile);
+                    cout << "\nBASARILI: " << partCount << " parca birlestirildi!\n";
+                    cout << "-> Cikti dosya: " << outputFile << endl;
+
+                    // Hash hesaplama (opsiyonel)
+                    string hash = calculateMD5(outputFile);
+                    cout << "-> MD5 Hash: " << hash << endl;
+                }
+                catch (const exception& e) {
+                    cout << "\nHATA: " << e.what() << endl;
+                }
+
+                cout << "\nDevam etmek icin bir tusa basin...";
+                _getch();
+                break;
+            }
