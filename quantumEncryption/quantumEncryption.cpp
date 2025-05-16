@@ -139,6 +139,28 @@ void loadUserDatabase() {
     }
 }
 
+// 6. Kullanıcı veritabanını kaydet
+void saveUserDatabase() {
+    ostringstream oss;
+    for (const auto& pair : users) {
+        const User& user = pair.second;
+        oss << user.username << ":" << user.password << ":"
+            << (user.isAdmin ? "1" : "0") << "\n";
+    }
+
+    string data = oss.str();
+    string encryptedData;
+    string key = "kuantumSifreleme123!";
+    for (size_t i = 0; i < data.size(); ++i) {
+        encryptedData += data[i] ^ key[i % key.size()];
+    }
+
+    ofstream out(USER_DB_FILE, ios::binary);
+    out << encryptedData;
+    out.close();
+}
+
+
 // 5. Menü Gösterimi
 void showMenu() {
     system("cls");
