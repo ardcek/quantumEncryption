@@ -7,9 +7,23 @@
 #include <openssl/evp.h>
 #include <conio.h>
 #include <cstdint>
+#include <map>
+#include <algorithm>
 #define _CRT_SECURE_NO_WARNINGS
 
 using namespace std;
+
+// Kullanıcı yapısı
+struct User {
+    string username;
+    string password;
+    bool isAdmin;
+};
+
+// Global değişkenler
+map<string, User> users;
+User currentUser;
+const string USER_DB_FILE = "users.dat";
 
 // 1. XOR Tabanlı Şifreleme Fonksiyonu
 void xorEncryptDecrypt(const string& inputFile, const string& outputFile, const string& key) {
