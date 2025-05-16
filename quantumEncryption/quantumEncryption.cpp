@@ -160,6 +160,39 @@ void saveUserDatabase() {
     out.close();
 }
 
+// 7. Kullanıcı girişi
+bool login() {
+    string username, password;
+    system("cls");
+    cout << "\n\tKUANTUM SIFRELEME DOSYA YONETICI - GIRIS\n";
+    cout << "\t========================================\n\n";
+    cout << "\tKullanici Adi: ";
+    getline(cin, username);
+    cout << "\tSifre: ";
+
+    // Şifre girişi gizleme
+    char ch;
+    password = "";
+    while ((ch = _getch()) != 13) { 
+        if (ch == 8) { 
+            if (!password.empty()) {
+                password.pop_back();
+                cout << "\b \b";
+            }
+        }
+        else {
+            password += ch;
+            cout << '*';
+        }
+    }
+
+    if (users.find(username) != users.end() && users[username].password == password) {
+        currentUser = users[username];
+        return true;
+    }
+    return false;
+}
+
 
 // 5. Menü Gösterimi
 void showMenu() {
