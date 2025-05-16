@@ -1,10 +1,10 @@
 ﻿  quantumEncryption.cpp
-C:\Users\Arda\source\repos\quantumEncryption\quantumEncryption\quantumEncryption.cpp(227,6): error C2601: 'showMenu': yerel işlev tanımları geçersiz
-      C:\Users\Arda\source\repos\quantumEncryption\quantumEncryption\quantumEncryption.cpp(213,17):
+C:\Users\Arda\source\repos\quantumEncryption\quantumEncryption\quantumEncryption.cpp(267,6): error C2601: 'showMenu': yerel işlev tanımları geçersiz
+      C:\Users\Arda\source\repos\quantumEncryption\quantumEncryption\quantumEncryption.cpp(212,25):
       bu satır henüz eşlenmemiş '{' içeriyor
   
-C:\Users\Arda\source\repos\quantumEncryption\quantumEncryption\quantumEncryption.cpp(257,5): error C2601: 'main': yerel işlev tanımları geçersiz
-      C:\Users\Arda\source\repos\quantumEncryption\quantumEncryption\quantumEncryption.cpp(213,17):
+C:\Users\Arda\source\repos\quantumEncryption\quantumEncryption\quantumEncryption.cpp(297,5): error C2601: 'main': yerel işlev tanımları geçersiz
+      C:\Users\Arda\source\repos\quantumEncryption\quantumEncryption\quantumEncryption.cpp(212,25):
       bu satır henüz eşlenmemiş '{' içeriyor
   
-C:\Users\Arda\source\repos\quantumEncryption\quantumEncryption\quantumEncryption.cpp(213,17): error C1075: '{': eşleşen hiçbir belirteç bulunamadı
+C:\Users\Arda\source\repos\quantumEncryption\quantumEncryption\quantumEncryption.cpp(212,25): error C1075: '{': eşleşen hiçbir belirteç bulunamadı

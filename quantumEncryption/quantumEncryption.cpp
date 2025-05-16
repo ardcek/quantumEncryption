@@ -221,6 +221,46 @@ void userManagementMenu() {
                 cout << "\n\tHATA: Bu kullanici adi zaten var!\n";
                 break;
             }
+            
+            cout << "\tSifre: ";
+            getline(cin, password);
+
+            cout << "\tAdmin yetkisi verilsin mi? (e/h): ";
+            cin >> adminChoice;
+            cin.ignore();
+
+            User newUser;
+            newUser.username = username;
+            newUser.password = password;
+            newUser.isAdmin = (adminChoice == 'e' || adminChoice == 'E');
+
+            users[username] = newUser;
+            saveUserDatabase();
+
+            cout << "\n\tBASARILI: Kullanici eklendi!\n";
+            break;
+        }
+        case 2: { // Kullanıcı sil
+            string username;
+            cout << "\n\tSilinecek Kullanici Adi: ";
+            getline(cin, username);
+
+            if (username == "admin") {
+                cout << "\n\tHATA: Admin kullanıcısı silinemez!\n";
+                break;
+            }
+
+            if (users.erase(username)) {
+                saveUserDatabase();
+                cout << "\n\tBASARILI: Kullanici silindi!\n";
+            }
+            else {
+                cout << "\n\tHATA: Kullanici bulunamadi!\n";
+            }
+            break;
+        }
+
+
 
 
 // 5. Menü Gösterimi
