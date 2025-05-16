@@ -1,4 +1,10 @@
 ﻿  quantumEncryption.cpp
-  quantumEncryption.vcxproj -> C:\Users\Arda\source\repos\quantumEncryption\x64\Debug\quantumEncryption.exe
-  'pwsh.exe' is not recognized as an internal or external command,
-  operable program or batch file.
+C:\Users\Arda\source\repos\quantumEncryption\quantumEncryption\quantumEncryption.cpp(227,6): error C2601: 'showMenu': yerel işlev tanımları geçersiz
+      C:\Users\Arda\source\repos\quantumEncryption\quantumEncryption\quantumEncryption.cpp(213,17):
+      bu satır henüz eşlenmemiş '{' içeriyor
+  
+C:\Users\Arda\source\repos\quantumEncryption\quantumEncryption\quantumEncryption.cpp(257,5): error C2601: 'main': yerel işlev tanımları geçersiz
+      C:\Users\Arda\source\repos\quantumEncryption\quantumEncryption\quantumEncryption.cpp(213,17):
+      bu satır henüz eşlenmemiş '{' içeriyor
+  
+C:\Users\Arda\source\repos\quantumEncryption\quantumEncryption\quantumEncryption.cpp(213,17): error C1075: '{': eşleşen hiçbir belirteç bulunamadı

@@ -193,6 +193,35 @@ bool login() {
     return false;
 }
 
+// 8. Kullanıcı yönetim menüsü 
+// "Case Menüsü Tamamlanmadığı için Kodlar Hatalı"
+void userManagementMenu() {
+    int choice;
+    do {
+        system("cls");
+        cout << "\n\tADMIN PANELI\n";
+        cout << "\t=================\n";
+        cout << "\t1. Kullanici Ekle\n";
+        cout << "\t2. Kullanici Sil\n";
+        cout << "\t3. Kullanici Listesi\n";
+        cout << "\t4. Ana Menu\n";
+        cout << "\n\tSeciminiz: ";
+        cin >> choice;
+        cin.ignore();
+
+        switch (choice) {
+        case 1: { // Kullanıcı ekle
+            string username, password;
+            char adminChoice;
+
+            cout << "\n\tYeni Kullanici Adi: ";
+            getline(cin, username);
+
+            if (users.find(username) != users.end()) {
+                cout << "\n\tHATA: Bu kullanici adi zaten var!\n";
+                break;
+            }
+
 
 // 5. Menü Gösterimi
 void showMenu() {
