@@ -100,6 +100,45 @@ string calculateMD5(const string& filename) {
     return ss.str();
 }
 
+// 5. Kullanıcı veritabanını yükle
+void loadUserDatabase() {
+    ifstream in(USER_DB_FILE, ios::binary);
+    if (!in) {
+        // Varsayılan admin kullanıcısını oluştur
+        User admin;
+        admin.username = "admin";
+        admin.password = "admin";
+        admin.isAdmin = true;
+        users["admin"] = admin;
+        return;
+    }
+
+    string encryptedData((istreambuf_iterator<char>(in)),
+        istreambuf_iterator<char>());
+    in.close();
+
+    // Basit XOR şifre çözme
+    string key = "kuantumSifreleme123!";
+    string decryptedData;
+    for (size_t i = 0; i < encryptedData.size(); ++i) {
+        decryptedData += encryptedData[i] ^ key[i % key.size()];
+    }
+
+    istringstream iss(decryptedData);
+    string line;
+    while (getline(iss, line)) {
+        size_t pos1 = line.find(':');
+        size_t pos2 = line.find(':', pos1 + 1);
+        if (pos1 != string::npos && pos2 != string::npos) {
+            User user;
+            user.username = line.substr(0, pos1);
+            user.password = line.substr(pos1 + 1, pos2 - pos1 - 1);
+            user.isAdmin = (line.substr(pos2 + 1) == "1");
+            users[user.username] = user;
+        }
+    }
+}
+
 // 5. Menü Gösterimi
 void showMenu() {
     system("cls");
