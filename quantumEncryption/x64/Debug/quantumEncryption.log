@@ -1,4 +1,2 @@
 ﻿  quantumEncryption.cpp
-  quantumEncryption.vcxproj -> C:\Users\Arda\source\repos\quantumEncryption\x64\Debug\quantumEncryption.exe
-  'pwsh.exe' is not recognized as an internal or external command,
-  operable program or batch file.
+C:\Users\Arda\source\repos\quantumEncryption\quantumEncryption\quantumEncryption.cpp(327,9): error C3861: 'showMenu': tanımlayıcı bulunamadı
