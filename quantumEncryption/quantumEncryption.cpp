@@ -213,39 +213,71 @@ void userManagementMenu() {
             string username, password;
             char adminChoice;
 
-            cout << "\n\tYeni Kullanici Adi: ";
-            getline(cin, username);
+            // Kullanıcı adı girişi 
+            while (true) {
+                cout << "\n\tYeni Kullanici Adi: ";
+                getline(cin, username);
 
-            if (users.find(username) != users.end()) {
-                cout << "\n\tHATA: Bu kullanici adi zaten var!\n";
-                break;
+                if (username.empty()) {
+                    cout << "\n\tHATA: Kullanici adi bos olamaz!\n";
+                    continue;
+                }
+
+                if (users.find(username) != users.end()) {
+                    cout << "\n\tHATA: Bu kullanici adi zaten var!\n";
+                }
+                else {
+                    break;  
+                }
             }
-            
-            cout << "\tSifre: ";
-            getline(cin, password);
 
-            cout << "\tAdmin yetkisi verilsin mi? (e/h): ";
-            cin >> adminChoice;
-            cin.ignore();
+            // Şifre girişi 
+            while (true) {
+                cout << "\tSifre: ";
+                getline(cin, password);
+
+                if (password.empty()) {
+                    cout << "\n\tHATA: Sifre bos olamaz!\n";
+                }
+                else {
+                    break;
+                }
+            }
+
+            // Admin yetkisi sorusu
+            while (true) {
+                cout << "\tAdmin yetkisi verilsin mi? (e/h): ";
+                cin >> adminChoice;
+                cin.ignore();
+
+                if (tolower(adminChoice) == 'e' || tolower(adminChoice) == 'h') {
+                    break;
+                }
+                else {
+                    cout << "\n\tHATA: Sadece 'e' veya 'h' giriniz!\n";
+                }
+            }
 
             User newUser;
             newUser.username = username;
             newUser.password = password;
-            newUser.isAdmin = (adminChoice == 'e' || adminChoice == 'E');
+            newUser.isAdmin = (tolower(adminChoice) == 'e');
 
             users[username] = newUser;
             saveUserDatabase();
 
             cout << "\n\tBASARILI: Kullanici eklendi!\n";
+            cout << "\tKullanici Adi: " << username << "\n";
+            cout << "\tYetki: " << (newUser.isAdmin ? "Admin" : "Standart Kullanici") << "\n";
             break;
-        }
+        }a
         case 2: { // Kullanıcı sil
             string username;
             cout << "\n\tSilinecek Kullanici Adi: ";
             getline(cin, username);
 
             if (username == "admin") {
-                cout << "\n\tHATA: Admin kullanıcısı silinemez!\n";
+                cout << "\n\tHATA: Admin kullanicisi silinemez!\n";
                 break;
             }
 
@@ -259,6 +291,7 @@ void userManagementMenu() {
             break;
         }
         case 3: { // Kullanıcı listesi
+
             cout << "\n\tKULLANICI LISTESI\n";
             cout << "\t----------------\n";
             for (const auto& pair : users) {
@@ -307,7 +340,7 @@ void showMainMenu() {
         cout << "\t\t\t\t\t======================================\n";
     }
     else {
-        cout << "\t\t\t\t\t| 5. Cikis                         |\n";
+        cout << "\t\t\t\t\t| 5. Cikis                           |\n";
         cout << "\t\t\t\t\t======================================\n";
     }
     cout << "\n\n\t\t\t\t\tKullanici: " << currentUser.username;
@@ -586,36 +619,42 @@ int main() {
                 break;
             }
 
-            case 5: { // KULLANICI YÖNETİMİ veya ÇIKIŞ
+            case 5:
                 if (currentUser.isAdmin) {
                     userManagementMenu();
                 }
                 else {
-                    choice = 6; // Normal kullanıcı için çıkış
+                    // Normal kullanıcı için çıkış
+                    cout << "\nCikis yapiliyor...\n";
+                    _getch();
+                    choice = 0; 
                 }
                 break;
-            }
 
-            case 6: { // ÇIKIŞ (Sadece admin görebilir)
+            case 6:
                 if (currentUser.isAdmin) {
-                    choice = 5; // Admin için çıkış
+                    cout << "\nCikis yapiliyor...\n";
+                    _getch();
+                    choice = 0; 
+                }
+                else {
+                    cout << "\n\tGecersiz secim!\n";
+                    _getch();
                 }
                 break;
-            }
 
-            default: {
+            default:
                 cout << "\n\tGecersiz secim!\n";
                 _getch();
-            }
-            }
         }
-        catch (const exception& e) {
-            cerr << "\n\tHATA: " << e.what() << endl;
-            _getch();
-        }
+    }
+    catch (const exception& e) {
+        cerr << "\n\tHATA: " << e.what() << endl;
+        _getch();
+    }
 
-    } while ((currentUser.isAdmin && choice != 6) || (!currentUser.isAdmin && choice != 5));
+} while (choice != 0);
 
-    EVP_cleanup();
-    return 0;
+EVP_cleanup();
+return 0;
 }
