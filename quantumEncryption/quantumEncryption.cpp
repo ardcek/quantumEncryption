@@ -586,7 +586,13 @@ int main() {
                 break;
             }
 
-            case 5: { // ÇIKIŞ
+            case 5: { // KULLANICI YÖNETİMİ veya ÇIKIŞ
+                if (currentUser.isAdmin) {
+                    userManagementMenu();
+                }
+                else {
+                    choice = 6; // Normal kullanıcı için çıkış
+                }
                 break;
             }
 
