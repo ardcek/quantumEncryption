@@ -302,8 +302,8 @@ void showMainMenu() {
     cout << "\t\t\t\t\t| 3. Dosya Birlestir                 |\n";
     cout << "\t\t\t\t\t| 4. Dosya Hash Hesapla (MD5)        |\n";
     if (currentUser.isAdmin) {
-        cout << "\t\t\t\t\t| 5. Kullanici Yonetimi            |\n";
-        cout << "\t\t\t\t\t| 6. Cikis                         |\n";
+        cout << "\t\t\t\t\t| 5. Kullanici Yonetimi              |\n";
+        cout << "\t\t\t\t\t| 6. Cikis                           |\n";
         cout << "\t\t\t\t\t======================================\n";
     }
     else {
@@ -319,12 +319,26 @@ void showMainMenu() {
 // 10. Ana Program
 int main() {
     OpenSSL_add_all_digests();
+    loadUserDatabase();
+
+    // Giriş ekranı
+    while (true) {
+        if (login()) {
+            break;
+        }
+        else {
+            cout << "\n\n\tHATA: Gecersiz kullanici adi veya sifre!\n";
+            cout << "\tTekrar denemek icin bir tusa basin...";
+            _getch();
+        }
+    }
+
     int choice;
     string inputFile, outputFile, key;
     vector<string> partList;
 
     do {
-        showMenu();
+        showMainMenu();
         cin >> choice;
         cin.ignore();
 
