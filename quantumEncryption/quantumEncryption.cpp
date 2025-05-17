@@ -259,6 +259,24 @@ void userManagementMenu() {
             }
             break;
         }
+        case 3: { // Kullanıcı listesi
+            cout << "\n\tKULLANICI LISTESI\n";
+            cout << "\t----------------\n";
+            for (const auto& pair : users) {
+                cout << "\t" << pair.first << " - "
+                    << (pair.second.isAdmin ? "Admin" : "User") << "\n";
+            }
+            break;
+        }
+        case 4: // Ana menüye dön
+            return;
+        default:
+            cout << "\n\tGecersiz secim!\n";
+        }
+        cout << "\n\tDevam etmek icin bir tusa basin...";
+        _getch();
+    } while (choice != 4);
+}
 
 
 
