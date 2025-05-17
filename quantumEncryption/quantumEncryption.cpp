@@ -596,18 +596,25 @@ int main() {
                 break;
             }
 
+            case 6: { // ÇIKIŞ (Sadece admin görebilir)
+                if (currentUser.isAdmin) {
+                    choice = 5; // Admin için çıkış
+                }
+                break;
+            }
+
             default: {
-                cout << "Gecersiz secim!\n";
+                cout << "\n\tGecersiz secim!\n";
                 _getch();
             }
             }
         }
         catch (const exception& e) {
-            cerr << "HATA: " << e.what() << endl;
+            cerr << "\n\tHATA: " << e.what() << endl;
             _getch();
         }
 
-    } while (choice != 5);
+    } while ((currentUser.isAdmin && choice != 6) || (!currentUser.isAdmin && choice != 5));
 
     EVP_cleanup();
     return 0;
