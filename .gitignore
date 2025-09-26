@@ -1,1 +1,35 @@
+# Visual Studio Files
 .vs/
+*.user
+*.suo
+*.sdf
+*.opensdf
+*.sln.docstates
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]in/
+[Oo]bj/
+
+# Build outputs
+*.exe
+*.pdb
+*.ilk
+*.log
+*.tlog
+*.idb
+*.obj
+*.lib
+
+# Quantum Encryption specific
+*.key
+*.dat
+*.meta
+*.split_info
+users.dat
+quantum_key_*
+
+# Temporary files
+*.tmp
+*~

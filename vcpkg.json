@@ -1,0 +1,10 @@
+{
+  "name": "quantum-encryption",
+  "version": "2.0.0",
+  "description": "Modern quantum-safe cryptography and file management system",
+  "homepage": "https://github.com/ardcek/quantumEncryption",
+  "dependencies": [
+    "openssl"
+  ],
+  "builtin-baseline": "a42af01b72c28a8e1d7b48107b33e4f286a55ef6"
+}

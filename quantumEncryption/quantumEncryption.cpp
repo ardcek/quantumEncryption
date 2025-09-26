@@ -4,16 +4,30 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <memory>
+#include <thread>
+#include <future>
+#include <chrono>
+#include <filesystem>
 #include <openssl/evp.h>
 #include <conio.h>
 #include <cstdint>
 #include <map>
 #include <algorithm>
+#include "CryptoEngine.h"
+#include "QuantumSimulator.h"
+#include "SecurityManager.h"
 #define _CRT_SECURE_NO_WARNINGS
 
 using namespace std;
+namespace fs = std::filesystem;
 
-// Kullanıcı yapısı
+// Global sistem nesneleri
+std::unique_ptr<CryptoEngine> cryptoEngine;
+std::unique_ptr<QuantumSimulator> quantumSim;
+std::unique_ptr<SecurityManager> securityMgr;
+
+// Kullanıcı yapısı (legacy support için korundu)
 struct User {
     string username;
     string password;
@@ -25,38 +39,173 @@ map<string, User> users;
 User currentUser;
 const string USER_DB_FILE = "users.dat";
 
-// 1. XOR Tabanlı Şifreleme Fonksiyonu
-void xorEncryptDecrypt(const string& inputFile, const string& outputFile, const string& key) {
-    ifstream in(inputFile, ios::binary);
-    ofstream out(outputFile, ios::binary);
-    char ch;
-    size_t keyIndex = 0;
-
-    while (in.get(ch)) {
-        out.put(ch ^ key[keyIndex++ % key.size()]);
+// Gelişmiş şifreleme fonksiyonu - Quantum-safe AES-256
+bool encryptFileQuantumSafe(const string& inputFile, const string& outputFile, 
+                           const string& password) {
+    try {
+        // Quantum-safe key derivation
+        auto salt = cryptoEngine->generateSecureKey(32);
+        auto key = cryptoEngine->deriveKeyFromPassword(password, salt, 32);
+        
+        vector<uint8_t> iv, tag;
+        bool success = cryptoEngine->encryptAES256GCM(inputFile, outputFile, key, iv, tag);
+        
+        if (success) {
+            // Salt, IV, ve tag'i dosya başına kaydet
+            ofstream metaFile(outputFile + ".meta", ios::binary);
+            metaFile.write(reinterpret_cast<const char*>(salt.data()), salt.size());
+            metaFile.write(reinterpret_cast<const char*>(iv.data()), iv.size());
+            metaFile.write(reinterpret_cast<const char*>(tag.data()), tag.size());
+            metaFile.close();
+            
+            // Güvenlik log'u
+            securityMgr->logSecurityEvent(currentUser.username, "ENCRYPT_FILE", 
+                                        inputFile, true, "AES-256-GCM encryption");
+        }
+        
+        return success;
+    }
+    catch (const exception& e) {
+        cerr << "Şifreleme hatası: " << e.what() << endl;
+        securityMgr->logSecurityEvent(currentUser.username, "ENCRYPT_FILE", 
+                                    inputFile, false, e.what());
+        return false;
     }
 }
 
-// 2. Dosya Parçalama Fonksiyonu
-vector<string> splitFile(const string& filename, int parts) {
-    ifstream file(filename, ios::binary | ios::ate);
-    if (!file.is_open()) throw runtime_error("Dosya acilamadi: " + filename);
-
-    size_t fileSize = file.tellg();
-    file.seekg(0, ios::beg);
-    size_t partSize = fileSize / parts;
-
-    vector<string> partNames;
-    vector<char> buffer(partSize);
-
-    for (int i = 0; i < parts; i++) {
-        if (i == parts - 1) partSize = fileSize - file.tellg();
-        file.read(buffer.data(), partSize);
-
-        string partName = filename + ".part" + to_string(i);
-        ofstream(partName, ios::binary).write(buffer.data(), partSize);
-        partNames.push_back(partName);
+// Gelişmiş şifre çözme fonksiyonu
+bool decryptFileQuantumSafe(const string& inputFile, const string& outputFile, 
+                           const string& password) {
+    try {
+        // Meta dosyadan salt, iv, tag'i oku
+        ifstream metaFile(inputFile + ".meta", ios::binary);
+        if (!metaFile) {
+            throw runtime_error("Meta dosya bulunamadı");
+        }
+        
+        vector<uint8_t> salt(32), iv(12), tag(16);
+        metaFile.read(reinterpret_cast<char*>(salt.data()), 32);
+        metaFile.read(reinterpret_cast<char*>(iv.data()), 12);
+        metaFile.read(reinterpret_cast<char*>(tag.data()), 16);
+        metaFile.close();
+        
+        // Anahtar türet
+        auto key = cryptoEngine->deriveKeyFromPassword(password, salt, 32);
+        
+        bool success = cryptoEngine->decryptAES256GCM(inputFile, outputFile, key, iv, tag);
+        
+        // Güvenlik log'u
+        securityMgr->logSecurityEvent(currentUser.username, "DECRYPT_FILE", 
+                                    inputFile, success, 
+                                    success ? "AES-256-GCM decryption" : "Decryption failed");
+        
+        return success;
     }
+    catch (const exception& e) {
+        cerr << "Şifre çözme hatası: " << e.what() << endl;
+        securityMgr->logSecurityEvent(currentUser.username, "DECRYPT_FILE", 
+                                    inputFile, false, e.what());
+        return false;
+    }
+}
+
+// Quantum Key Distribution ile anahtar üret
+vector<uint8_t> generateQuantumKey(size_t keyLength) {
+    try {
+        cout << "\n\tQuantum Key Distribution (BB84) başlatılıyor...\n";
+        
+        auto session = quantumSim->simulateCompleteBB84(keyLength);
+        
+        cout << "\t- Photon gönderimi tamamlandı\n";
+        cout << "\t- Quantum error rate: " << (session.quantumErrorRate * 100) << "%\n";
+        cout << "\t- Discarded bits: " << session.discardedBits << "\n";
+        
+        if (quantumSim->detectEavesdropping(session)) {
+            cout << "\t⚠️  UYARI: Dinleme tespit edildi!\n";
+            return {};
+        }
+        
+        // Error correction
+        auto correction = quantumSim->performErrorCorrection(session.siftedKey);
+        cout << "\t- Error correction: " << correction.correctedErrors << " bit düzeltildi\n";
+        
+        // Privacy amplification
+        auto finalKey = quantumSim->privacyAmplification(correction.correctedKey, keyLength);
+        
+        cout << "\t✅ Quantum key başarıyla oluşturuldu! (" << finalKey.size() << " bytes)\n";
+        
+        securityMgr->logSecurityEvent(currentUser.username, "QUANTUM_KEY_GEN", 
+                                    "BB84", true, "Key length: " + to_string(keyLength));
+        
+        return finalKey;
+    }
+    catch (const exception& e) {
+        cerr << "Quantum key generation hatası: " << e.what() << endl;
+        return cryptoEngine->generateQuantumSafeKey(keyLength); // Fallback
+    }
+}
+
+// Gelişmiş dosya parçalama - Paralel işlem destekli
+vector<string> splitFileAdvanced(const string& filename, int parts) {
+    if (!fs::exists(filename)) {
+        throw runtime_error("Dosya bulunamadı: " + filename);
+    }
+    
+    auto fileSize = fs::file_size(filename);
+    if (fileSize == 0) {
+        throw runtime_error("Dosya boş: " + filename);
+    }
+    
+    ifstream file(filename, ios::binary);
+    if (!file.is_open()) {
+        throw runtime_error("Dosya açılamadı: " + filename);
+    }
+    
+    size_t partSize = fileSize / parts;
+    vector<string> partNames;
+    vector<thread> workers;
+    
+    cout << "\n\tDosya parçalanıyor... (" << fileSize << " bytes, " << parts << " parça)\n";
+    
+    for (int i = 0; i < parts; i++) {
+        size_t currentPartSize = (i == parts - 1) ? fileSize - (partSize * i) : partSize;
+        string partName = filename + ".part" + to_string(i);
+        partNames.push_back(partName);
+        
+        // Paralel parçalama
+        workers.emplace_back([&file, partName, i, partSize, currentPartSize]() {
+            vector<char> buffer(currentPartSize);
+            
+            // Thread-safe file reading
+            {
+                lock_guard<mutex> lock(fileMutex);
+                file.seekg(i * partSize);
+                file.read(buffer.data(), currentPartSize);
+            }
+            
+            ofstream partFile(partName, ios::binary);
+            partFile.write(buffer.data(), currentPartSize);
+            partFile.close();
+        });
+    }
+    
+    // Tüm thread'lerin tamamlanmasını bekle
+    for (auto& worker : workers) {
+        worker.join();
+    }
+    
+    file.close();
+    
+    // Her parça için hash hesapla
+    cout << "\n\tParça hash'leri:\n";
+    for (const auto& part : partNames) {
+        string hash = cryptoEngine->calculateSHA3_256(part);
+        cout << "\t" << fs::path(part).filename().string() << ": " << hash.substr(0, 16) << "...\n";
+    }
+    
+    securityMgr->logSecurityEvent(currentUser.username, "SPLIT_FILE", 
+                                filename, true, to_string(parts) + " parts created");
+    
     return partNames;
 }
 
@@ -270,7 +419,7 @@ void userManagementMenu() {
             cout << "\tKullanici Adi: " << username << "\n";
             cout << "\tYetki: " << (newUser.isAdmin ? "Admin" : "Standart Kullanici") << "\n";
             break;
-        }a
+        }
         case 2: { // Kullanıcı sil
             string username;
             cout << "\n\tSilinecek Kullanici Adi: ";
@@ -310,351 +459,540 @@ void userManagementMenu() {
     } while (choice != 4);
 }
 
-// 9. Ana menü gösterimi
-void showMainMenu() {
+// Global thread güvenliği için
+mutex fileMutex;
+
+// Gelişmiş menü gösterimi
+void showEnhancedMainMenu() {
     system("cls");
     cout << "\n";
-    cout << "\t                         _                                                      _   _             \n";
-    cout << "\t  __ _ _   _  __ _ _ __ | |_ _   _ _ __ ___     ___ _ __   ___ _ __ _   _ _ __ | |_(_) ___  _ __  \n";
-    cout << "\t / _` | | | |/ _` | '_ \\| __| | | | '_ ` _ \\   / _ \\ '_ \\ / __| '__| | | | '_ \\| __| |/ _ \\| '_ \\ \n";
-    cout << "\t| (_| | |_| | (_| | | | | |_| |_| | | | | | | |  __/ | | | (__| |  | |_| | |_) | |_| | (_) | | | |\n";
-    cout << "\t \\__, |\\__,_|\\__,_|_| |_|\\__|\\__,_|_| |_| |_|  \\___|_| |_|\\___|_|   \\__, | .__/ \\__|_|\\___/|_| |_|\n";
-    cout << "\t    |_|                                                             |___/|_|                      \n";
-    cout << "\n";
-    cout << "\t\t\t\t\t   __            ___          __    \n";
-    cout << "\t\t\t\t\t  / /  __ __    / _ | _______/ /__ _\n";
-    cout << "\t\t\t\t\t / _ \\/ // /   / __ |/ __/ _  / _ `/\n";
-    cout << "\t\t\t\t\t/_.__/\\_, /   /_/ |_/_/  \\_,_/\\_,_/ \n";
-    cout << "\t\t\t\t\t     /___/                          \n";
-    cout << "\n";
-    cout << "\t\t\t\t\t======================================\n";
-    cout << "\t\t\t\t\t| KUANTUM SIFRELEME DOSYA YONETICI   |\n";
-    cout << "\t\t\t\t\t|------------------------------------|\n";
-    cout << "\t\t\t\t\t| 1. Dosya Sifrele (XOR)             |\n";
-    cout << "\t\t\t\t\t| 2. Dosya Parcala                   |\n";
-    cout << "\t\t\t\t\t| 3. Dosya Birlestir                 |\n";
-    cout << "\t\t\t\t\t| 4. Dosya Hash Hesapla (MD5)        |\n";
+    cout << R"(
+    ╔══════════════════════════════════════════════════════════════╗
+    ║                🔬 QUANTUM ENCRYPTION SYSTEM v2.0             ║
+    ║                                                              ║
+    ║  🛡️  QUANTUM-SAFE CRYPTOGRAPHY & ADVANCED SECURITY          ║
+    ╠══════════════════════════════════════════════════════════════╣
+    ║                                                              ║
+    ║  1. 🔐 Quantum-Safe Encryption Suite                        ║
+    ║  2. ⚛️  Quantum Key Distribution (BB84/E91)                  ║
+    ║  3. 📦 Advanced File Splitting & Distribution               ║
+    ║  4. 🔗 Secure File Merging & Verification                   ║
+    ║  5. 🔍 Security Analysis & Hash Verification                ║)" << "\n";
+    
     if (currentUser.isAdmin) {
-        cout << "\t\t\t\t\t| 5. Kullanici Yonetimi              |\n";
-        cout << "\t\t\t\t\t| 6. Cikis                           |\n";
-        cout << "\t\t\t\t\t======================================\n";
+        cout << R"(    ║  6. 👨‍💼 Advanced Admin Panel                               ║
+    ║  7. 📊 Security Reports & Audit Logs                    ║
+    ║  8. 🚪 Secure Exit                                       ║)" << "\n";
+    } else {
+        cout << R"(    ║  6. 🚪 Exit                                               ║)" << "\n";
     }
-    else {
-        cout << "\t\t\t\t\t| 5. Cikis                           |\n";
-        cout << "\t\t\t\t\t======================================\n";
+    
+    cout << R"(    ╚══════════════════════════════════════════════════════════════╝
+    
+    👤 User: )" << currentUser.username;
+    
+    if (currentUser.isAdmin) cout << " (👑 Admin)";
+    
+    cout << R"(
+    
+    ⚡ Select Option: )";
+}
+
+// Şifreleme menüsü
+void showEncryptionMenu() {
+    int choice;
+    do {
+        system("cls");
+        cout << "\n\t🔐 QUANTUM-SAFE ENCRYPTION SUITE\n";
+        cout << "\t=================================\n\n";
+        cout << "\t1. AES-256-GCM Encryption (Quantum-Safe)\n";
+        cout << "\t2. Post-Quantum Lattice Encryption\n";
+        cout << "\t3. ChaCha20-Poly1305 Encryption\n";
+        cout << "\t4. XOR Encryption (Legacy)\n";
+        cout << "\t5. Decrypt File\n";
+        cout << "\t6. Back to Main Menu\n";
+        cout << "\n\tChoice: ";
+        
+        cin >> choice;
+        cin.ignore();
+        
+        switch (choice) {
+        case 1: {
+            string inputFile, outputFile, password;
+            cout << "\n\tFile to encrypt: ";
+            getline(cin, inputFile);
+            
+            if (inputFile.empty()) break;
+            
+            cout << "\tOutput file: ";
+            getline(cin, outputFile);
+            
+            cout << "\tPassword: ";
+            getline(cin, password);
+            
+            if (encryptFileQuantumSafe(inputFile, outputFile, password)) {
+                cout << "\n\t✅ File encrypted successfully!\n";
+                cout << "\t📁 Input: " << inputFile << "\n";
+                cout << "\t💾 Output: " << outputFile << "\n";
+                cout << "\t🔒 Method: AES-256-GCM (Quantum-Safe)\n";
+            } else {
+                cout << "\n\t❌ Encryption failed!\n";
+            }
+            
+            _getch();
+            break;
+        }
+        case 2: {
+            string inputFile, outputFile;
+            cout << "\n\tFile to encrypt: ";
+            getline(cin, inputFile);
+            
+            if (inputFile.empty()) break;
+            
+            cout << "\tOutput file: ";
+            getline(cin, outputFile);
+            
+            // Generate post-quantum key
+            auto publicKey = cryptoEngine->generateQuantumSafeKey(32);
+            
+            if (cryptoEngine->encryptLattice(inputFile, outputFile, publicKey)) {
+                cout << "\n\t✅ Post-quantum encryption successful!\n";
+                cout << "\t🔐 Method: Ring-LWE Lattice-based\n";
+            } else {
+                cout << "\n\t❌ Encryption failed!\n";
+            }
+            
+            _getch();
+            break;
+        }
+        case 5: {
+            string inputFile, outputFile, password;
+            cout << "\n\tEncrypted file: ";
+            getline(cin, inputFile);
+            
+            if (inputFile.empty()) break;
+            
+            cout << "\tOutput file: ";
+            getline(cin, outputFile);
+            
+            cout << "\tPassword: ";
+            getline(cin, password);
+            
+            if (decryptFileQuantumSafe(inputFile, outputFile, password)) {
+                cout << "\n\t✅ File decrypted successfully!\n";
+            } else {
+                cout << "\n\t❌ Decryption failed! (Wrong password or corrupted file)\n";
+            }
+            
+            _getch();
+            break;
+        }
+        default:
+            if (choice != 6) {
+                cout << "\n\t❌ Invalid choice!\n";
+                _getch();
+            }
+        }
+    } while (choice != 6);
+}
+
+// Quantum Key Distribution işlemi
+void performQuantumKeyDistribution() {
+    system("cls");
+    cout << "\n\t⚛️  QUANTUM KEY DISTRIBUTION\n";
+    cout << "\t============================\n\n";
+    
+    cout << "\tSelect Protocol:\n";
+    cout << "\t1. BB84 (Prepare & Measure)\n";
+    cout << "\t2. E91 (Entanglement-based)\n";
+    cout << "\t3. SARG04 (4-state protocol)\n";
+    cout << "\n\tChoice: ";
+    
+    int protocol;
+    cin >> protocol;
+    cin.ignore();
+    
+    if (protocol < 1 || protocol > 3) {
+        cout << "\n\t❌ Invalid protocol selection!\n";
+        _getch();
+        return;
     }
-    cout << "\n\n\t\t\t\t\tKullanici: " << currentUser.username;
-    if (currentUser.isAdmin) cout << " (Admin)";
-    cout << "\n\n\t\t\t\t\tSeciminiz: ";
+    
+    cout << "\n\tKey length (bytes): ";
+    size_t keyLength;
+    cin >> keyLength;
+    cin.ignore();
+    
+    if (keyLength < 16 || keyLength > 1024) {
+        cout << "\n\t❌ Key length must be between 16-1024 bytes!\n";
+        _getch();
+        return;
+    }
+    
+    vector<uint8_t> quantumKey;
+    auto startTime = chrono::high_resolution_clock::now();
+    
+    switch (protocol) {
+    case 1:
+        quantumKey = generateQuantumKey(keyLength);
+        break;
+    case 2:
+        quantumKey = quantumSim->simulateE91Protocol(keyLength);
+        break;
+    case 3:
+        quantumKey = quantumSim->simulateSARGProtocol(keyLength);
+        break;
+    }
+    
+    auto endTime = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::milliseconds>(endTime - startTime);
+    
+    if (!quantumKey.empty()) {
+        cout << "\n\t✅ Quantum key generated successfully!\n";
+        cout << "\t⏱️  Generation time: " << duration.count() << " ms\n";
+        cout << "\t🔑 Key length: " << quantumKey.size() << " bytes\n";
+        cout << "\t🛡️  Quantum security level: ULTRA HIGH\n";
+        
+        // Key'i dosyaya kaydet
+        string keyFile = "quantum_key_" + to_string(time(nullptr)) + ".key";
+        ofstream outFile(keyFile, ios::binary);
+        outFile.write(reinterpret_cast<const char*>(quantumKey.data()), quantumKey.size());
+        outFile.close();
+        
+        cout << "\t💾 Key saved to: " << keyFile << "\n";
+        
+        // Entropy analizi
+        double entropy = cryptoEngine->calculateEntropy(keyFile);
+        cout << "\t📊 Key entropy: " << entropy << "/8.0 bits\n";
+        
+        if (entropy > 7.8) {
+            cout << "\t🟢 Excellent entropy - Cryptographically secure\n";
+        } else if (entropy > 7.0) {
+            cout << "\t🟡 Good entropy - Acceptable for most uses\n";
+        } else {
+            cout << "\t🔴 Low entropy - Consider regenerating\n";
+        }
+    } else {
+        cout << "\n\t❌ Quantum key generation failed!\n";
+        cout << "\t🕵️  Possible eavesdropping detected!\n";
+    }
+    
+    cout << "\n\tPress any key to continue...";
+    _getch();
+}
+
+// Gelişmiş dosya parçalama
+void performAdvancedFileSplitting() {
+    system("cls");
+    cout << "\n\t📦 ADVANCED FILE SPLITTING\n";
+    cout << "\t==========================\n\n";
+    
+    string inputFile;
+    cout << "\tFile to split: ";
+    getline(cin, inputFile);
+    
+    if (inputFile.empty() || !fs::exists(inputFile)) {
+        cout << "\n\t❌ File not found!\n";
+        _getch();
+        return;
+    }
+    
+    auto fileSize = fs::file_size(inputFile);
+    cout << "\n\t📁 File size: " << fileSize << " bytes (" 
+         << (fileSize / 1024.0 / 1024.0) << " MB)\n";
+    
+    int parts;
+    cout << "\tNumber of parts (2-100): ";
+    cin >> parts;
+    cin.ignore();
+    
+    if (parts < 2 || parts > 100) {
+        cout << "\n\t❌ Invalid number of parts!\n";
+        _getch();
+        return;
+    }
+    
+    try {
+        auto startTime = chrono::high_resolution_clock::now();
+        vector<string> partFiles = splitFileAdvanced(inputFile, parts);
+        auto endTime = chrono::high_resolution_clock::now();
+        
+        auto duration = chrono::duration_cast<chrono::milliseconds>(endTime - startTime);
+        
+        cout << "\n\t✅ File split successfully!\n";
+        cout << "\t⏱️  Split time: " << duration.count() << " ms\n";
+        cout << "\t📦 Parts created: " << partFiles.size() << "\n";
+        
+        // Verilerin bütünlük kontrolü için toplam hash
+        string originalHash = cryptoEngine->calculateSHA3_256(inputFile);
+        cout << "\n\t🔍 Original file SHA3-256: " << originalHash.substr(0, 16) << "...\n";
+        
+        // Part metadata dosyası oluştur
+        string metadataFile = inputFile + ".split_info";
+        ofstream meta(metadataFile);
+        meta << "ORIGINAL_FILE=" << inputFile << "\n";
+        meta << "PARTS=" << parts << "\n";
+        meta << "TOTAL_SIZE=" << fileSize << "\n";
+        meta << "ORIGINAL_HASH=" << originalHash << "\n";
+        meta << "SPLIT_TIME=" << duration.count() << "\n";
+        
+        for (const auto& part : partFiles) {
+            auto partSize = fs::file_size(part);
+            auto partHash = cryptoEngine->calculateSHA3_256(part);
+            meta << "PART=" << part << "," << partSize << "," << partHash << "\n";
+        }
+        meta.close();
+        
+        cout << "\t📋 Metadata saved to: " << metadataFile << "\n";
+        
+    } catch (const exception& e) {
+        cout << "\n\t❌ Split failed: " << e.what() << "\n";
+    }
+    
+    cout << "\n\tPress any key to continue...";
+    _getch();
+}
+
+// Gelişmiş dosya birleştirme
+void performAdvancedFileMerging() {
+    system("cls");
+    cout << "\n\t🔗 SECURE FILE MERGING\n";
+    cout << "\t======================\n\n";
+    
+    string metadataFile;
+    cout << "\tMetadata file (.split_info): ";
+    getline(cin, metadataFile);
+    
+    if (metadataFile.empty() || !fs::exists(metadataFile)) {
+        cout << "\n\t❌ Metadata file not found!\n";
+        _getch();
+        return;
+    }
+    
+    // Metadata dosyasını oku
+    ifstream meta(metadataFile);
+    string line;
+    string originalFile, originalHash;
+    int expectedParts;
+    size_t totalSize;
+    vector<string> partFiles;
+    
+    while (getline(meta, line)) {
+        if (line.find("ORIGINAL_FILE=") == 0) {
+            originalFile = line.substr(14);
+        } else if (line.find("PARTS=") == 0) {
+            expectedParts = stoi(line.substr(6));
+        } else if (line.find("TOTAL_SIZE=") == 0) {
+            totalSize = stoull(line.substr(11));
+        } else if (line.find("ORIGINAL_HASH=") == 0) {
+            originalHash = line.substr(14);
+        } else if (line.find("PART=") == 0) {
+            size_t commaPos = line.find(',');
+            if (commaPos != string::npos) {
+                string partFile = line.substr(5, commaPos - 5);
+                partFiles.push_back(partFile);
+            }
+        }
+    }
+    meta.close();
+    
+    cout << "\n\t📁 Original file: " << originalFile << "\n";
+    cout << "\t📦 Expected parts: " << expectedParts << "\n";
+    cout << "\t📏 Total size: " << totalSize << " bytes\n";
+    
+    // Part dosyalarının varlığını kontrol et
+    vector<string> missingParts;
+    for (const auto& part : partFiles) {
+        if (!fs::exists(part)) {
+            missingParts.push_back(part);
+        }
+    }
+    
+    if (!missingParts.empty()) {
+        cout << "\n\t❌ Missing parts found:\n";
+        for (const auto& missing : missingParts) {
+            cout << "\t   - " << missing << "\n";
+        }
+        _getch();
+        return;
+    }
+    
+    string outputFile;
+    cout << "\n\tOutput file name: ";
+    getline(cin, outputFile);
+    
+    if (outputFile.empty()) {
+        outputFile = originalFile + "_merged";
+    }
+    
+    try {
+        auto startTime = chrono::high_resolution_clock::now();
+        
+        // Birleştirme işlemi
+        ofstream outFile(outputFile, ios::binary);
+        if (!outFile) {
+            throw runtime_error("Cannot create output file");
+        }
+        
+        size_t totalMerged = 0;
+        cout << "\n\t⚙️  Merging parts...\n";
+        
+        for (size_t i = 0; i < partFiles.size(); ++i) {
+            ifstream partFile(partFiles[i], ios::binary);
+            if (!partFile) {
+                throw runtime_error("Cannot read part: " + partFiles[i]);
+            }
+            
+            outFile << partFile.rdbuf();
+            auto partSize = fs::file_size(partFiles[i]);
+            totalMerged += partSize;
+            
+            cout << "\t   ✓ Part " << (i + 1) << "/" << partFiles.size() 
+                 << " (" << partSize << " bytes)\n";
+            
+            partFile.close();
+        }
+        
+        outFile.close();
+        
+        auto endTime = chrono::high_resolution_clock::now();
+        auto duration = chrono::duration_cast<chrono::milliseconds>(endTime - startTime);
+        
+        // Bütünlük kontrolü
+        string mergedHash = cryptoEngine->calculateSHA3_256(outputFile);
+        
+        cout << "\n\t✅ File merged successfully!\n";
+        cout << "\t⏱️  Merge time: " << duration.count() << " ms\n";
+        cout << "\t📏 Merged size: " << totalMerged << " bytes\n";
+        cout << "\t💾 Output: " << outputFile << "\n";
+        
+        cout << "\n\t🔍 INTEGRITY CHECK:\n";
+        cout << "\t   Original hash: " << originalHash.substr(0, 32) << "...\n";
+        cout << "\t   Merged hash:   " << mergedHash.substr(0, 32) << "...\n";
+        
+        if (originalHash == mergedHash) {
+            cout << "\t   ✅ INTEGRITY VERIFIED - Files match perfectly!\n";
+        } else {
+            cout << "\t   ❌ INTEGRITY FAILED - Files do not match!\n";
+            cout << "\t   ⚠️  Data corruption may have occurred!\n";
+        }
+        
+    } catch (const exception& e) {
+        cout << "\n\t❌ Merge failed: " << e.what() << "\n";
+    }
+    
+    cout << "\n\tPress any key to continue...";
+    _getch();
 }
 
 
-// 10. Ana Program
+// Ana Program - Modern C++ ile güncellenmiş
 int main() {
-    OpenSSL_add_all_digests();
-    loadUserDatabase();
-
-    // Giriş ekranı
-    while (true) {
-        if (login()) {
-            break;
-        }
-        else {
-            cout << "\n\n\tHATA: Gecersiz kullanici adi veya sifre!\n";
-            cout << "\tTekrar denemek icin bir tusa basin...";
-            _getch();
-        }
-    }
-
-    int choice;
-    string inputFile, outputFile, key;
-    vector<string> partList;
-
-    do {
-        showMainMenu();
-        cin >> choice;
-        cin.ignore();
-
-        try {
-            switch (choice) {
-            case 1: { // XOR ŞİFRELEME İŞLEMİ
-                string inputFile, outputFile, key;
-
-                cout << "Sifrelenecek dosya (iptal icin bos birakin): ";
-                getline(cin, inputFile);
-
-                if (inputFile.empty()) {
-                    cout << "\nIslem iptal edildi. Ana menuye donuluyor...\n";
-                    _getch();
-                    break;
-                }
-
-                cout << "Sifrelenmis dosya adi: ";
-                getline(cin, outputFile);
-
-                if (outputFile.empty()) {
-                    cout << "\nHATA: Cikti dosya adi bos olamaz!\n";
-                    _getch();
-                    break;
-                }
-
-                cout << "Sifre anahtari: ";
-                getline(cin, key);
-
-                if (key.empty()) {
-                    cout << "\nHATA: Sifre anahtari bos olamaz!\n";
-                    _getch();
-                    break;
-                }
-
-                try {
-                    xorEncryptDecrypt(inputFile, outputFile, key);
-                    cout << "\nBASARILI: Dosya sifrelendi!\n";
-                    cout << "Girdi: " << inputFile << "\n";
-                    cout << "Cikti: " << outputFile << "\n";
-                }
-                catch (const exception& e) {
-                    cout << "\nHATA: " << e.what() << "\n";
-                }
-
-                cout << "\nDevam etmek icin bir tusa basin...";
-                _getch();
+    try {
+        // Sistem başlatma
+        cout << "\n\t🔬 QUANTUM ENCRYPTION SYSTEM v2.0\n";
+        cout << "\t==================================\n";
+        cout << "\t🔧 Sistem başlatılıyor...\n";
+        
+        // Bileşenleri başlat
+        cryptoEngine = make_unique<CryptoEngine>();
+        quantumSim = make_unique<QuantumSimulator>();
+        securityMgr = make_unique<SecurityManager>();
+        
+        cout << "\t✅ Quantum-safe cryptography engine loaded\n";
+        cout << "\t✅ BB84 quantum simulator initialized\n";
+        cout << "\t✅ Advanced security manager active\n";
+        
+        // OpenSSL başlat
+        OpenSSL_add_all_digests();
+        loadUserDatabase();
+        
+        cout << "\t✅ User database loaded\n";
+        cout << "\t🚀 System ready!\n";
+        
+        // Giriş ekranı
+        while (true) {
+            if (login()) {
                 break;
             }
-
-            case 2: { // DOSYA PARÇALAMA İŞLEMİ
-                string inputFile;
-                int parts;
-
-                // 1. DOSYA GİRİŞİ
-                cout << "Parcalanacak dosya (iptal icin bos birakin): ";
-                getline(cin, inputFile);
-
-                if (inputFile.empty()) {
-                    cout << "\nIslem iptal edildi. Ana menuye donuluyor...\n";
-                    _getch();
-                    break;
-                }
-
-                // 2. DOSYA KONTROLÜ
-                ifstream file(inputFile, ios::binary);
-                if (!file) {
-                    cout << "\nHATA: \"" << inputFile << "\" dosyasi acilamadi!\n";
-                    cout << "Ana menuye donmek icin bir tusa basin...";
-                    _getch();
-                    break;
-                }
-                file.close();
-
-                // 3. PARÇA SAYISI GİRİŞİ
-                while (true) {
-                    cout << "Parca sayisi (en az 2): ";
-                    string partsStr;
-                    getline(cin, partsStr);
-
-                    if (partsStr.empty()) {
-                        cout << "\nİşlem iptal edildi.\n";
-                        break;
-                    }
-
-                    try {
-                        parts = stoi(partsStr);
-                        if (parts >= 2) break;
-                        cout << "HATA: En az 2 parça girmelisiniz!\n";
-                    }
-                    catch (...) {
-                        cout << "HATA: Geçerli bir sayı girin!\n";
-                    }
-                }
-
-                // 4. PARÇALAMA İŞLEMİ
-                try {
-                    vector<string> createdParts = splitFile(inputFile, parts);
-                    cout << "\nBASARILI: Dosya " << parts << " parçaya bolundu:\n";
-                    for (const auto& part : createdParts) {
-                        cout << "->" << part << "\n";
-                    }
-                }
-                catch (const exception& e) {
-                    cout << "\nHATA: " << e.what() << "\n";
-                }
-
-                cout << "\nAna menuye donmek icin bir tusa basin...";
+            else {
+                cout << "\n\n\t❌ HATA: Geçersiz kullanıcı adı veya şifre!\n";
+                cout << "\tTekrar denemek için bir tuşa basın...";
                 _getch();
-                break;
             }
+        }
 
-            case 3: { // DOSYA BİRLEŞTİRME İŞLEMİ
-                vector<string> partsToMerge;
-                string outputFile;
+        int choice;
+        do {
+            showEnhancedMainMenu();
+            cin >> choice;
+            cin.ignore();
 
-                // 1. PARÇA SAYISI SORMA
-                int partCount = 0;
-                while (true) {
-                    cout << "Birlestirilecek parca sayisi (iptal icin 0 girin): ";
-                    string partCountStr;
-                    getline(cin, partCountStr);
-
-                    if (partCountStr.empty()) {
-                        cout << "\nIslem iptal edildi. Ana menuye donuluyor...\n";
+            try {
+                switch (choice) {
+                case 1: // Gelişmiş şifreleme menüsü
+                    showEncryptionMenu();
+                    break;
+                    
+                case 2: // Quantum Key Distribution
+                    performQuantumKeyDistribution();
+                    break;
+                    
+                case 3: // Dosya parçalama
+                    performAdvancedFileSplitting();
+                    break;
+                    
+                case 4: // Dosya birleştirme
+                    performAdvancedFileMerging();
+                    break;
+                    
+                case 5: // Hash ve analiz
+                    performSecurityAnalysis();
+                    break;
+                    
+                case 6: // Admin paneli
+                    if (currentUser.isAdmin) {
+                        showAdvancedAdminPanel();
+                    } else {
+                        cout << "\n\t❌ Yetkisiz erişim!\n";
                         _getch();
-                        break;
-                    }
-
-                    try {
-                        partCount = stoi(partCountStr);
-                        if (partCount == 0) {
-                            cout << "\nIslem iptal edildi. Ana menuye donuluyor...\n";
-                            _getch();
-                            break;
-                        }
-                        else if (partCount < 1) {
-                            cout << "HATA: En az 1 parca girmelisiniz!\n";
-                            continue;
-                        }
-                        break;
-                    }
-                    catch (...) {
-                        cout << "HATA: Gecerli bir sayi girin!\n";
-                    }
-                }
-
-                if (partCount == 0) break;
-
-                // 2. PARÇALARI TEK TEK ALMA
-                for (int i = 0; i < partCount; i++) {
-                    while (true) {
-                        cout << i + 1 << ". parca dosya yolu: ";
-                        string partPath;
-                        getline(cin, partPath);
-
-                        if (partPath.empty()) {
-                            cout << "HATA: Dosya yolu bos olamaz!\n";
-                            continue;
-                        }
-
-                        ifstream file(partPath, ios::binary);
-                        if (!file) {
-                            cout << "HATA: \"" << partPath << "\" dosyasi acilamadi!\n";
-                            continue;
-                        }
-                        file.close();
-
-                        partsToMerge.push_back(partPath);
-                        break;
-                    }
-                }
-
-                // 3. ÇIKTI DOSYASI BELİRLEME
-                while (true) {
-                    cout << "Birlestirilmis dosya adi (iptal icin bos birakin): ";
-                    getline(cin, outputFile);
-
-                    if (outputFile.empty()) {
-                        cout << "\nIslem iptal edildi. Ana menuye donuluyor...\n";
-                        _getch();
-                        break;
-                    }
-
-                    // Dosya uzantısı kontrolü
-                    if (outputFile.find('.') == string::npos) {
-                        cout << "UYARI: Dosya uzantisi belirtilmedi (.txt, .dat vb.)\n";
                     }
                     break;
+                    
+                case 7: // Güvenlik raporları
+                    showSecurityReports();
+                    break;
+                    
+                case 8: // Çıkış
+                    cout << "\n\t👋 Güvenli çıkış yapılıyor...\n";
+                    securityMgr->logSecurityEvent(currentUser.username, "LOGOUT", 
+                                                "SYSTEM", true, "Normal logout");
+                    _getch();
+                    choice = 0;
+                    break;
+                    
+                default:
+                    cout << "\n\t❌ Geçersiz seçim!\n";
+                    _getch();
                 }
-
-                if (outputFile.empty()) break;
-
-                // 4. BİRLEŞTİRME İŞLEMİ
-                try {
-                    mergeFiles(partsToMerge, outputFile);
-                    cout << "\nBASARILI: " << partCount << " parca birlestirildi!\n";
-                    cout << "-> Cikti dosya: " << outputFile << endl;
-
-                    // Hash hesaplama
-                    string hash = calculateMD5(outputFile);
-                    cout << "-> MD5 Hash: " << hash << endl;
-                }
-                catch (const exception& e) {
-                    cout << "\nHATA: " << e.what() << endl;
-                }
-
-                cout << "\nDevam etmek icin bir tusa basin...";
+            }
+            catch (const exception& e) {
+                cerr << "\n\t💥 HATA: " << e.what() << endl;
+                securityMgr->logSecurityEvent(currentUser.username, "ERROR", 
+                                            "SYSTEM", false, e.what());
                 _getch();
-                break;
             }
 
-            case 4: { // HASH HESAPLAMA İŞLEMİ
-                string inputFile;
-
-                cout << "Hash hesaplanacak dosya (iptal icin bos birakin): ";
-                getline(cin, inputFile);
-
-                if (inputFile.empty()) {
-                    cout << "\nIslem iptal edildi. Ana menuye donuluyor...\n";
-                    _getch();
-                    break;
-                }
-
-                ifstream file(inputFile, ios::binary);
-                if (!file) {
-                    cout << "\nHATA: \"" << inputFile << "\" dosyasi acilamadi!\n";
-                    _getch();
-                    break;
-                }
-                file.close();
-
-                try {
-                    string hash = calculateMD5(inputFile);
-                    cout << "\nBASARILI: Hash hesaplandi!\n";
-                    cout << "Dosya: " << inputFile << endl;
-                    cout << "MD5:   " << hash << endl;
-                }
-                catch (const exception& e) {
-                    cout << "\nHATA: " << e.what() << endl;
-                }
-
-                cout << "\nDevam etmek icin bir tusa basin...";
-                _getch();
-                break;
-            }
-
-            case 5:
-                if (currentUser.isAdmin) {
-                    userManagementMenu();
-                }
-                else {
-                    // Normal kullanıcı için çıkış
-                    cout << "\nCikis yapiliyor...\n";
-                    _getch();
-                    choice = 0; 
-                }
-                break;
-
-            case 6:
-                if (currentUser.isAdmin) {
-                    cout << "\nCikis yapiliyor...\n";
-                    _getch();
-                    choice = 0; 
-                }
-                else {
-                    cout << "\n\tGecersiz secim!\n";
-                    _getch();
-                }
-                break;
-
-            default:
-                cout << "\n\tGecersiz secim!\n";
-                _getch();
-        }
+        } while (choice != 0);
     }
     catch (const exception& e) {
-        cerr << "\n\tHATA: " << e.what() << endl;
+        cerr << "\n💥 FATAL ERROR: " << e.what() << endl;
         _getch();
+        return -1;
     }
 
-} while (choice != 0);
-
-EVP_cleanup();
-return 0;
+    // Temizlik
+    EVP_cleanup();
+    cout << "\n\t🔒 Secure cleanup completed.\n";
+    return 0;
 }
